@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Archive Item - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto space-y-6">
+  <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div class="flex items-center space-x-3 {% if item.is_active %}text-amber-600{% else %}text-emerald-600{% endif %} mb-4">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+      <h1 class="text-xl font-bold text-gray-900">
+        {% if item.is_active %}Archive Item{% else %}Restore Item{% endif %}
+      </h1>
+    </div>
+
+    <p class="text-sm text-gray-600 mb-6">
+      {% if item.is_active %}
+      Are you sure you want to archive <strong>{{ item.name }}</strong>? Archiving hides the item from daily stock entry forms while safely preserving all historical movement logs and audit records.
+      {% else %}
+      Restore <strong>{{ item.name }}</strong> to active status so it appears in standard stock forms again?
+      {% endif %}
+    </p>
+
+    <form method="post" class="flex items-center justify-between">
+      {% csrf_token %}
+      <a href="{% url 'catalog:item_detail' item.id %}" class="text-sm text-gray-600 hover:text-gray-900">Cancel</a>
+      <button type="submit" class="px-4 py-2 {% if item.is_active %}bg-amber-600 hover:bg-amber-700{% else %}bg-emerald-600 hover:bg-emerald-700{% endif %} text-white text-sm font-semibold rounded-lg shadow-sm">
+        Confirm {% if item.is_active %}Archive{% else %}Restore{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

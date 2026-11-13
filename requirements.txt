@@ -1,0 +1,13 @@
+# Core Django framework
+Django>=5.1.0,<6.2.0
+python-dotenv>=1.0.1
+
+# Production WSGI server and Database adapter
+gunicorn>=23.0.0
+psycopg[binary]>=3.2.0
+
+# Testing and Code Quality
+pytest>=8.0.0
+pytest-django>=4.9.0
+ruff>=0.8.0
+

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit {{ item.name }}{% else %}New Item{% endif %} - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if is_edit %}Edit Item: {{ item.name }}{% else %}Add New Inventory Item{% endif %}
+    </h1>
+    <p class="text-sm text-gray-600">Enter item details, code, unit type, and reorder levels.</p>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      <!-- Item Name -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Item Name *</label>
+        {{ form.name }}
+        {% if form.name.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Item Code (SKU) & Barcode -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">
+            Item Code (SKU)
+            <span class="text-xs font-normal text-gray-500">(Optional internal code)</span>
+          </label>
+          {{ form.sku }}
+          {% if form.sku.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.sku.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">
+            Barcode Text
+            <span class="text-xs font-normal text-gray-500">(Optional scan code)</span>
+          </label>
+          {{ form.barcode }}
+          {% if form.barcode.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.barcode.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- Category & Unit -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.category.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Unit of Measurement *</label>
+          {{ form.unit }}
+          {% if form.unit.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.unit.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- Supplier -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Primary Supplier (Optional)</label>
+        {{ form.supplier }}
+        {% if form.supplier.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.supplier.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Pricing & Reorder Level -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-gray-100">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Cost Price ({{ current_workspace.currency }})</label>
+          {{ form.cost_price }}
+          {% if form.cost_price.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.cost_price.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Selling Price ({{ current_workspace.currency }})</label>
+          {{ form.selling_price }}
+          {% if form.selling_price.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.selling_price.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">
+            Reorder Alert Level
+            <span class="text-xs font-normal text-gray-500">(0 = none)</span>
+          </label>
+          {{ form.reorder_level }}
+          {% if form.reorder_level.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.reorder_level.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- Optional Opening Balance (Only shown on initial item creation) -->
+      {% if not is_edit %}
+      <div class="p-4 bg-sky-50/70 border border-sky-200 rounded-lg space-y-3">
+        <div>
+          <h2 class="text-sm font-bold text-sky-900">Starting Stock (Optional Opening Balance)</h2>
+          <p class="text-xs text-sky-700">If you already have units on the shelf right now, enter them here. An initial stock receipt movement will be created automatically.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-sky-900 mb-1">Starting Quantity</label>
+            {{ form.opening_quantity }}
+            {% if form.opening_quantity.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.opening_quantity.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-sky-900 mb-1">Storage Location</label>
+            {{ form.opening_location }}
+            {% if form.opening_location.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.opening_location.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Description / Notes -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Description / Notes</label>
+        {{ form.description }}
+        {% if form.description.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.description.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Active / Inactive checkbox -->
+      <div class="pt-2 flex items-center space-x-2">
+        {{ form.is_active }}
+        <label class="text-sm font-medium text-gray-700">Active item (uncheck to archive and hide from daily stock forms)</label>
+      </div>
+
+      <div class="pt-4 flex items-center justify-between border-t border-gray-100">
+        <a href="{% if is_edit %}{% url 'catalog:item_detail' item.id %}{% else %}{% url 'catalog:item_list' %}{% endif %}" class="text-sm text-gray-600 hover:text-gray-900">
+          Cancel
+        </a>
+        <button type="submit" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm">
+          {% if is_edit %}Save Changes{% else %}Create Item{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

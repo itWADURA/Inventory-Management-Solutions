@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Itwadura Inventory{% endblock %} - Know what you have, where it is, and when to restock</title>
+  
+  <meta name="description" content="Simple, dependable open-source inventory management for small businesses.">
+  <meta name="theme-color" content="#0284c7">
+  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'icons/icon-192.svg' %}">
+
+  <!-- Local CSS and Libraries (No runtime external CDN dependencies) -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <script defer src="{% static 'js/vendor/alpine.min.js' %}"></script>
+  <script src="{% static 'js/vendor/htmx.min.js' %}"></script>
+  <script src="{% static 'js/app.js' %}"></script>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full flex flex-col font-sans antialiased text-gray-800" x-data="{ mobileMenuOpen: false, workspaceDropdown: false, userDropdown: false }">
+
+  {% if user.is_authenticated and current_workspace %}
+  <!-- Authenticated App Shell -->
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- Desktop Left Sidebar Navigation -->
+    <aside class="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-100 flex-shrink-0 border-r border-slate-800">
+      <!-- App Brand -->
+      <div class="px-6 py-5 flex items-center space-x-3 border-b border-slate-800 bg-slate-950">
+        <svg class="w-8 h-8 text-sky-400" viewBox="0 0 192 192" fill="currentColor">
+          <path d="M48 68 L96 42 L144 68 L96 94 Z" fill="#38bdf8"/>
+          <path d="M48 68 L48 124 L96 150 L96 94 Z" fill="#0284c7"/>
+          <path d="M144 68 L144 124 L96 150 L96 94 Z" fill="#0369a1"/>
+        </svg>
+        <div>
+          <span class="text-lg font-bold tracking-tight text-white block">Itwadura</span>
+          <span class="text-xs text-slate-400 font-medium">Inventory System</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Button in Sidebar -->
+      <div class="p-4 border-b border-slate-800">
+        <a href="{% url 'inventory:receive_stock' %}" class="w-full flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-md shadow-sm transition-colors focus:ring-2 focus:ring-sky-400">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add / Receive Stock
+        </a>
+      </div>
+
+      <!-- Sidebar Nav Links -->
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Main Navigation">
+        <a href="{% url 'organizations:dashboard' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          Dashboard
+        </a>
+
+        <a href="{% url 'catalog:item_list' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'catalog/items' in request.path or request.resolver_match.url_name == 'item_list' %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Items & Catalog
+        </a>
+
+        <a href="{% url 'inventory:movement_list' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'inventory/movements' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+          Stock Movements
+        </a>
+
+        <a href="{% url 'reports:index' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'reports' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Reports & Export
+        </a>
+
+        <div class="pt-4 pb-2">
+          <span class="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</span>
+        </div>
+
+        <a href="{% url 'inventory:location_list' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'inventory/locations' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Locations
+        </a>
+
+        <a href="{% url 'catalog:category_list' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'catalog/categories' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          Categories
+        </a>
+
+        <a href="{% url 'catalog:supplier_list' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'catalog/suppliers' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          Suppliers
+        </a>
+
+        {% if is_manager %}
+        <a href="{% url 'audit:log' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'audit' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          Audit Log
+        </a>
+        {% endif %}
+
+        {% if is_owner %}
+        <a href="{% url 'organizations:members' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'members' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Team Members
+        </a>
+
+        <a href="{% url 'organizations:settings' %}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-slate-800 hover:text-white transition-colors {% if 'settings' in request.path %}bg-slate-800 text-sky-400 font-semibold{% else %}text-slate-300{% endif %}">
+          <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Workspace Settings
+        </a>
+        {% endif %}
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+        Itwadura v1.0.0 &bull; Open Source
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+      
+      <!-- Top Navigation Bar -->
+      <header class="bg-white border-b border-gray-200 z-10">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          
+          <!-- Mobile Menu Toggle Button -->
+          <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" aria-label="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+
+          <!-- Workspace Badge & Switcher Dropdown -->
+          <div class="relative" @click.away="workspaceDropdown = false">
+            <button @click="workspaceDropdown = !workspaceDropdown" class="flex items-center space-x-2 text-left bg-gray-50 hover:bg-gray-100 border border-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 transition">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="font-bold text-gray-900">{{ current_workspace.name }}</span>
+              <span class="text-xs bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded">{{ current_membership.get_role_display }}</span>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            <!-- Workspace dropdown menu -->
+            <div x-show="workspaceDropdown" x-cloak class="absolute left-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 z-50">
+              <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Your Workspaces</div>
+              <div class="py-1">
+                {% for ws in user_workspaces %}
+                <a href="{% url 'organizations:switch' ws.id %}" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {% if ws.id == current_workspace.id %}font-bold bg-sky-50 text-sky-900{% endif %}">
+                  <span>{{ ws.name }}</span>
+                  {% if ws.id == current_workspace.id %}
+                  <svg class="w-4 h-4 text-sky-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  {% endif %}
+                </a>
+                {% endfor %}
+              </div>
+              <div class="py-1">
+                <a href="{% url 'organizations:create' %}" class="flex items-center px-4 py-2 text-sm text-sky-600 hover:bg-gray-100 font-medium">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Create New Workspace
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top-Right User Menu -->
+          <div class="flex items-center space-x-3">
+            <span class="hidden sm:inline-block text-xs font-medium text-gray-500">Currency: <strong class="text-gray-800">{{ current_workspace.currency }}</strong></span>
+
+            <div class="relative" @click.away="userDropdown = false">
+              <button @click="userDropdown = !userDropdown" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 p-1 hover:bg-gray-100">
+                <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs uppercase">
+                  {{ user.first_name|default:user.username|slice:":2" }}
+                </div>
+                <span class="hidden md:inline-block font-medium text-gray-700">{{ user.username }}</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+
+              <div x-show="userDropdown" x-cloak class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
+                <div class="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                  Signed in as <strong class="text-gray-800">{{ user.username }}</strong>
+                </div>
+                <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Account Profile</a>
+                <a href="{% url 'accounts:change_password' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Change Password</a>
+                <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 border-t border-gray-100">Sign Out</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile Sliding Drawer Navigation -->
+      <div x-show="mobileMenuOpen" x-cloak class="md:hidden fixed inset-0 z-50 flex">
+        <div @click="mobileMenuOpen = false" class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity"></div>
+        <div class="relative flex-1 flex flex-col max-w-xs w-full bg-slate-900 text-white py-4 px-6 z-10">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <span class="text-lg font-bold text-sky-400">Itwadura Inventory</span>
+            <button @click="mobileMenuOpen = false" class="p-1 rounded-md text-slate-400 hover:text-white" aria-label="Close menu">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <nav class="mt-4 space-y-1.5 flex-1 overflow-y-auto">
+            <a href="{% url 'organizations:dashboard' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Dashboard</a>
+            <a href="{% url 'catalog:item_list' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Items & Catalog</a>
+            <a href="{% url 'inventory:movement_list' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Stock Movements</a>
+            <a href="{% url 'inventory:receive_stock' %}" class="block px-3 py-2 rounded-md font-medium text-sky-400 hover:bg-slate-800">+ Receive Stock</a>
+            <a href="{% url 'inventory:use_stock' %}" class="block px-3 py-2 rounded-md font-medium text-sky-400 hover:bg-slate-800">- Record Usage</a>
+            <a href="{% url 'inventory:adjust_stock' %}" class="block px-3 py-2 rounded-md font-medium text-sky-400 hover:bg-slate-800">&plusmn; Adjust Count</a>
+            <a href="{% url 'reports:index' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Reports</a>
+            <a href="{% url 'inventory:location_list' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Locations</a>
+            <a href="{% url 'catalog:category_list' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Categories</a>
+            <a href="{% url 'catalog:supplier_list' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Suppliers</a>
+            {% if is_manager %}<a href="{% url 'audit:log' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Audit Log</a>{% endif %}
+            {% if is_owner %}<a href="{% url 'organizations:settings' %}" class="block px-3 py-2 rounded-md font-medium text-slate-200 hover:bg-slate-800">Settings</a>{% endif %}
+          </nav>
+        </div>
+      </div>
+
+      <!-- Main Scrollable Content Container -->
+      <main class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Django Flash Feedback Messages -->
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+          {% for message in messages %}
+          <div class="p-4 rounded-lg flex items-center justify-between text-sm shadow-sm
+            {% if message.tags == 'success' %}bg-emerald-50 text-emerald-900 border border-emerald-200
+            {% elif message.tags == 'error' %}bg-rose-50 text-rose-900 border border-rose-200
+            {% elif message.tags == 'warning' %}bg-amber-50 text-amber-900 border border-amber-200
+            {% else %}bg-sky-50 text-sky-900 border border-sky-200{% endif %}" role="alert">
+            <div class="flex items-center space-x-2">
+              {% if message.tags == 'success' %}
+              <svg class="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              {% elif message.tags == 'error' %}
+              <svg class="w-5 h-5 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+              {% else %}
+              <svg class="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Unauthenticated or No Active Workspace Layout -->
+  <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-100">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sky-600 text-white shadow-md mb-3">
+        <svg class="w-8 h-8" viewBox="0 0 192 192" fill="currentColor">
+          <path d="M48 68 L96 42 L144 68 L96 94 Z" fill="#bae6fd"/>
+          <path d="M48 68 L48 124 L96 150 L96 94 Z" fill="#ffffff"/>
+          <path d="M144 68 L144 124 L96 150 L96 94 Z" fill="#38bdf8"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Itwadura Inventory</h1>
+      <p class="mt-1 text-sm text-slate-600">Know what you have, where it is, and when to restock.</p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+      {% if messages %}
+      <div class="mb-4 space-y-2">
+        {% for message in messages %}
+        <div class="p-3 rounded-md text-sm border {% if message.tags == 'error' %}bg-rose-50 text-rose-800 border-rose-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-200{% else %}bg-sky-50 text-sky-800 border-sky-200{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="bg-white py-8 px-6 shadow-md rounded-xl sm:px-10 border border-gray-200">
+        {% block auth_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

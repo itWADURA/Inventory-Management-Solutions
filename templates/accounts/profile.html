@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">User Profile</h1>
+    <p class="text-sm text-gray-600">Manage your personal account details and credentials.</p>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <h2 class="text-base font-semibold text-gray-900 mb-4">Personal Details</h2>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">First Name</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Last Name</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-lg shadow-sm">
+          Save Profile Details
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+    <div>
+      <h2 class="text-base font-semibold text-gray-900">Security & Password</h2>
+      <p class="text-sm text-gray-600">Update your account login password.</p>
+    </div>
+    <a href="{% url 'accounts:change_password' %}" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg border border-gray-300">
+      Change Password
+    </a>
+  </div>
+</div>
+{% endblock %}
+

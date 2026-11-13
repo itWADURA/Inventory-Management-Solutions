@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Record Stock Usage - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+  <div>
+    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 mb-2">
+      Stock Outflow (-)
+    </div>
+    <h1 class="text-2xl font-bold text-gray-900">Record Stock Usage / Sale</h1>
+    <p class="text-sm text-gray-600">Deduct units that were sold, consumed, damaged, or used in operations.</p>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      <!-- Item selection -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Item Used / Sold *</label>
+        <div data-balance-item>
+          {{ form.item }}
+        </div>
+        {% if form.item.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.item.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Location selection -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Source Storage Location *</label>
+        <div data-balance-location>
+          {{ form.location }}
+        </div>
+        {% if form.location.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.location.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Live Current Balance Display -->
+      <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between text-sm">
+        <span class="text-gray-600">Available physical stock at selected location:</span>
+        <strong data-balance-display class="text-gray-900 font-bold">-</strong>
+      </div>
+
+      <!-- Quantity used -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Quantity Used or Sold (-) *</label>
+        {{ form.quantity }}
+        <p class="text-xs text-rose-600 mt-1 font-medium">Reduces on-hand stock. Cannot exceed available quantity.</p>
+        {% if form.quantity.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.quantity.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- Reason / Reference -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Reason / Purpose of Usage *</label>
+        {{ form.reason }}
+        <p class="text-xs text-gray-500 mt-1">e.g. Customer sale receipt #772, used for workshop maintenance, broken in transit</p>
+        {% if form.reason.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.reason.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="pt-4 flex items-center justify-between border-t border-gray-100">
+        <a href="{% url 'inventory:movement_list' %}" class="text-sm text-gray-600 hover:text-gray-900">Cancel</a>
+        <button type="submit" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+          Confirm & Deduct Stock (-)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

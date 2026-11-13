@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Items & Catalog - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Items & Catalog</h1>
+      <p class="text-sm text-gray-600">Track items, unit types, codes, and stock thresholds.</p>
+    </div>
+
+    {% if is_manager %}
+    <div class="flex items-center space-x-3">
+      <a href="{% url 'reports:csv_import' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Import CSV
+      </a>
+      <a href="{% url 'catalog:item_create' %}" class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add New Item
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Filter & Search Bar with HTMX Integration -->
+  <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+    <form method="get"
+          hx-get="{% url 'catalog:item_list' %}"
+          hx-target="#item-table-container"
+          hx-swap="outerHTML"
+          hx-trigger="input from:#search-input delay:300ms, change from:select, change from:#low-stock-check"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+      <!-- Search by Name / Code / Barcode -->
+      <div class="lg:col-span-2 relative">
+        <input type="text"
+               id="search-input"
+               name="q"
+               value="{{ query }}"
+               placeholder="Search item name, code (SKU), or barcode..."
+               class="pl-9 w-full">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+      </div>
+
+      <!-- Filter Category -->
+      <div>
+        <select name="category" aria-label="Filter by Category">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Filter Active Status -->
+      <div>
+        <select name="status" aria-label="Filter by Status">
+          <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active items only</option>
+          <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Archived items only</option>
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All items (Active & Archived)</option>
+        </select>
+      </div>
+
+      <!-- Sort Options -->
+      <div>
+        <select name="sort" aria-label="Sort By">
+          <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Sort: Name (A-Z)</option>
+          <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Sort: Name (Z-A)</option>
+          <option value="quantity_desc" {% if sort_by == 'quantity_desc' %}selected{% endif %}>Sort: Quantity (High &rarr; Low)</option>
+          <option value="quantity_asc" {% if sort_by == 'quantity_asc' %}selected{% endif %}>Sort: Quantity (Low &rarr; High)</option>
+          <option value="low_stock" {% if sort_by == 'low_stock' %}selected{% endif %}>Sort: Low Stock First</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Items Table Partial Container -->
+  {% include "catalog/partials/item_table.html" %}
+
+</div>
+{% endblock %}
+

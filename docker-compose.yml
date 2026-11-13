@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: itwadura_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-itwadura_inventory}
+      POSTGRES_USER: ${DB_USER:-itwadura_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-itwadura_secure_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-itwadura_user} -d ${DB_NAME:-itwadura_inventory}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: itwadura_web
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2"
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost,http://127.0.0.1,http://localhost:8000}
+      DB_ENGINE: postgresql
+      DB_NAME: ${DB_NAME:-itwadura_inventory}
+      DB_USER: ${DB_USER:-itwadura_user}
+      DB_PASSWORD: ${DB_PASSWORD:-itwadura_secure_pass}
+      DB_HOST: db
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: itwadura_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - static_volume:/var/www/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  caddy_data:
+  caddy_config:
+

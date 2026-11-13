@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Locations - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Stock Locations</h1>
+      <p class="text-sm text-gray-600">Storage points, warehouses, shelves, or store branches.</p>
+    </div>
+
+    <a href="{% url 'inventory:location_create' %}" class="inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold shadow-sm transition">
+      <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add Location
+    </a>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <tr>
+          <th class="px-6 py-3.5">Location Name</th>
+          <th class="px-6 py-3.5">Notes / Description</th>
+          <th class="px-6 py-3.5 text-right">Total Units Stored</th>
+          <th class="px-6 py-3.5 text-center">Status</th>
+          <th class="px-6 py-3.5 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for loc in locations %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 font-semibold text-gray-900">{{ loc.name }}</td>
+          <td class="px-6 py-4 text-gray-600">{{ loc.notes|default:"-" }}</td>
+          <td class="px-6 py-4 text-right font-bold text-gray-900">
+            {{ loc.total_stock|default:"0.00"|floatformat:2 }}
+          </td>
+          <td class="px-6 py-4 text-center">
+            {% if loc.is_active %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">Active</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-800">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-right">
+            <a href="{% url 'inventory:location_edit' loc.id %}" class="text-sky-600 hover:text-sky-800 font-medium text-xs">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+            No locations defined yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

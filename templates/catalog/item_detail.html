@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-gray-200">
+    <div>
+      <div class="flex items-center space-x-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ item.name }}</h1>
+        {% if not item.is_active %}
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">Archived</span>
+        {% elif item.is_low_stock %}
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Low Stock Alert</span>
+        {% else %}
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">In Stock</span>
+        {% endif %}
+      </div>
+      <p class="text-sm text-gray-600 mt-1">
+        Code (SKU): <strong class="text-gray-900">{{ item.sku|default:"None" }}</strong>
+        {% if item.barcode %} &bull; Barcode: <strong class="text-gray-900">{{ item.barcode }}</strong>{% endif %}
+        &bull; Category: <strong class="text-gray-900">{{ item.category.name|default:"General" }}</strong>
+      </p>
+    </div>
+
+    <!-- Quick Movement & Edit Actions -->
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'inventory:receive_stock' %}?item={{ item.id }}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Stock
+      </a>
+      <a href="{% url 'inventory:use_stock' %}?item={{ item.id }}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+        Use Stock
+      </a>
+      <a href="{% url 'inventory:adjust_stock' %}?item={{ item.id }}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition">
+        Adjust Count
+      </a>
+      {% if is_manager %}
+      <a href="{% url 'catalog:item_edit' item.id %}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition">
+        Edit Item
+      </a>
+      <a href="{% url 'catalog:item_archive' item.id %}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium {% if item.is_active %}text-rose-700 hover:bg-rose-50 border-rose-200{% else %}text-emerald-700 hover:bg-emerald-50 border-emerald-200{% endif %} bg-white shadow-sm transition">
+        {% if item.is_active %}Archive{% else %}Restore{% endif %}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Key Item Statistics Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Total Quantity On Hand</p>
+      <p class="text-2xl font-extrabold {% if item.is_low_stock %}text-amber-600{% else %}text-emerald-600{% endif %} mt-1">
+        {{ total_quantity|floatformat:2 }} <span class="text-sm font-normal text-gray-500">{{ item.get_unit_display }}</span>
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Reorder Alert Level</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">
+        {% if item.reorder_level > 0 %}{{ item.reorder_level|floatformat:2 }} <span class="text-sm font-normal text-gray-500">{{ item.get_unit_display }}</span>{% else %}<span class="text-sm font-normal text-gray-400">None set</span>{% endif %}
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Cost Price</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">
+        {{ current_workspace.currency }} {{ item.cost_price|floatformat:2 }}
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Selling Price</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1">
+        {{ current_workspace.currency }} {{ item.selling_price|floatformat:2 }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Details & Locations Split View -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Item Meta / Information (1 col) -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm h-fit space-y-3">
+      <h2 class="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">Item Information</h2>
+      <div class="text-sm space-y-2">
+        <p><span class="text-gray-500">Unit of measure:</span> <strong class="text-gray-800">{{ item.get_unit_display }}</strong></p>
+        <p><span class="text-gray-500">Supplier:</span> <strong class="text-gray-800">{{ item.supplier.name|default:"None assigned" }}</strong></p>
+        <p><span class="text-gray-500">Created:</span> <span class="text-gray-700">{{ item.created_at|date:"M d, Y H:i" }}</span></p>
+        <p><span class="text-gray-500">Last updated:</span> <span class="text-gray-700">{{ item.updated_at|date:"M d, Y H:i" }}</span></p>
+      </div>
+
+      {% if item.description %}
+      <div class="pt-2 border-t border-gray-100">
+        <span class="text-xs font-semibold text-gray-500 uppercase block mb-1">Notes & Description</span>
+        <p class="text-sm text-gray-700 whitespace-pre-line bg-gray-50 p-2.5 rounded-lg border border-gray-200">{{ item.description }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- On Hand Balances by Location (2 cols) -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+      <div class="px-6 py-3.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Stock by Location</h2>
+      </div>
+
+      <div class="divide-y divide-gray-100">
+        {% for b in balances %}
+        <div class="p-4 sm:px-6 flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-900">{{ b.location.name }}</p>
+            <p class="text-xs text-gray-500">{{ b.location.notes|default:"Physical storage area" }}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="font-extrabold text-base text-gray-900">{{ b.quantity|floatformat:2 }} {{ item.get_unit_display }}</span>
+            <a href="{% url 'inventory:receive_stock' %}?item={{ item.id }}&location={{ b.location.id }}" class="text-xs text-sky-600 hover:text-sky-800 font-medium">+ Add</a>
+            <a href="{% url 'inventory:use_stock' %}?item={{ item.id }}&location={{ b.location.id }}" class="text-xs text-rose-600 hover:text-rose-800 font-medium">- Use</a>
+            <a href="{% url 'inventory:adjust_stock' %}?item={{ item.id }}&location={{ b.location.id }}" class="text-xs text-amber-600 hover:text-amber-800 font-medium">&plusmn; Count</a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="p-8 text-center text-gray-500">
+          <p class="text-sm">No recorded stock balance at any location yet.</p>
+          <a href="{% url 'inventory:receive_stock' %}?item={{ item.id }}" class="mt-2 inline-block text-xs font-semibold text-sky-600 hover:text-sky-700">+ Receive initial stock now</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Movement History Table for this Item -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-base font-bold text-gray-900">Recent Movement History for {{ item.name }}</h2>
+      <a href="{% url 'inventory:movement_list' %}?item={{ item.id }}" class="text-xs font-semibold text-sky-600 hover:text-sky-700">View Full History &rarr;</a>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
+          <tr>
+            <th class="px-6 py-3">Timestamp</th>
+            <th class="px-6 py-3">Location</th>
+            <th class="px-6 py-3">Type</th>
+            <th class="px-6 py-3 text-right">Change</th>
+            <th class="px-6 py-3 text-right">Resulting Balance</th>
+            <th class="px-6 py-3">Reason / Notes</th>
+            <th class="px-6 py-3">User</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for m in movements %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-xs text-gray-500">{{ m.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="px-6 py-3 font-medium text-gray-900">{{ m.location.name }}</td>
+            <td class="px-6 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
+                {% if m.movement_type == 'RECEIVED' or m.movement_type == 'OPENING_BALANCE' %}bg-emerald-100 text-emerald-800
+                {% elif m.movement_type == 'USED' %}bg-rose-100 text-rose-800
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ m.get_movement_type_display }}
+              </span>
+            </td>
+            <td class="px-6 py-3 text-right font-bold {% if m.quantity_delta > 0 %}text-emerald-600{% elif m.quantity_delta < 0 %}text-rose-600{% else %}text-gray-700{% endif %}">
+              {% if m.quantity_delta > 0 %}+{% endif %}{{ m.quantity_delta }}
+            </td>
+            <td class="px-6 py-3 text-right text-gray-700">{{ m.quantity_after }}</td>
+            <td class="px-6 py-3 text-gray-600">{{ m.reason }}</td>
+            <td class="px-6 py-3 text-xs text-gray-500">{{ m.user.username|default:"System" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-8 text-center text-gray-500 text-sm">
+              No movement history recorded yet for this item.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+

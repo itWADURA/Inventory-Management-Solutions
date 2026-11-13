@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Team Members - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Workspace Team Members</h1>
+      <p class="text-sm text-gray-600">Manage who has access to <strong>{{ current_workspace.name }}</strong> and their role.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Members List Table (2 cols) -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Current Members ({{ memberships|length }})</h2>
+      </div>
+
+      <div class="divide-y divide-gray-100">
+        {% for m in memberships %}
+        <div class="p-4 sm:px-6 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm uppercase">
+              {{ m.user.first_name|default:m.user.username|slice:":2" }}
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">
+                {{ m.user.first_name }} {{ m.user.last_name }} 
+                <span class="font-normal text-gray-500">(@{{ m.user.username }})</span>
+              </p>
+              <p class="text-xs text-gray-500">{{ m.user.email }} &bull; Added {{ m.created_at|date:"M d, Y" }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+              {% if m.role == 'OWNER' %}bg-purple-100 text-purple-800
+              {% elif m.role == 'MANAGER' %}bg-sky-100 text-sky-800
+              {% else %}bg-gray-100 text-gray-800{% endif %}">
+              {{ m.get_role_display }}
+            </span>
+
+            {% if is_owner and m.user != user %}
+            <div class="flex items-center space-x-2">
+              <a href="{% url 'organizations:member_edit' m.id %}" class="text-xs text-sky-600 hover:text-sky-800 font-medium">Edit Role</a>
+              <span class="text-gray-300">|</span>
+              <a href="{% url 'organizations:member_delete' m.id %}" class="text-xs text-rose-600 hover:text-rose-800 font-medium">Remove</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Add Member Form Box (1 col) -->
+    {% if is_owner %}
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
+      <h2 class="text-base font-bold text-gray-900 mb-2">Add Member</h2>
+      <p class="text-xs text-gray-500 mb-4">
+        Add an existing registered user to this workspace by their username or email address.
+      </p>
+
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Username or Email *</label>
+          {{ form.username_or_email }}
+          {% if form.username_or_email.errors %}<p class="text-xs text-rose-600 mt-1">{{ form.username_or_email.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Assigned Role *</label>
+          {{ form.role }}
+          <div class="mt-2 text-xs text-gray-500 space-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <p><strong>Owner:</strong> Full workspace & settings access</p>
+            <p><strong>Manager:</strong> Catalog, stock movements & reports</p>
+            <p><strong>Staff:</strong> View catalog and record stock</p>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+          Add to Workspace
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+

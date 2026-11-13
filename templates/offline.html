@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Offline - Itwadura Inventory{% endblock %}
+
+{% block auth_content %}
+<div class="text-center py-6">
+  <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-4">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-12.728 0m0 0l2.829-2.829m-2.829 2.829L3 21M8.464 15.536a5 5 0 010-7.072m0 0l2.829 2.829"/></svg>
+  </div>
+  <h2 class="text-xl font-bold text-gray-900">You are currently offline</h2>
+  <p class="mt-2 text-sm text-gray-600">
+    Itwadura Inventory requires a network connection to securely view and update real-time stock balances across devices.
+  </p>
+  <div class="mt-6">
+    <button onclick="window.location.reload()" class="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+      Retry Connection
+    </button>
+  </div>
+</div>
+{% endblock %}
+

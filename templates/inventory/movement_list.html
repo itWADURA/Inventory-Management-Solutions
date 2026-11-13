@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Movements - Itwadura Inventory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  
+  <!-- Header & Actions -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Stock Movements</h1>
+      <p class="text-sm text-gray-600">Immutable ledger of all additions, usage, and verified count corrections.</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'inventory:receive_stock' %}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Stock
+      </a>
+      <a href="{% url 'inventory:use_stock' %}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+        Use Stock
+      </a>
+      <a href="{% url 'inventory:adjust_stock' %}" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition">
+        Adjust Count
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Filter Item</label>
+        <select name="item">
+          <option value="">All Items</option>
+          {% for itm in items %}
+          <option value="{{ itm.id }}" {% if selected_item == itm.id|stringformat:"s" %}selected{% endif %}>{{ itm.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Filter Location</label>
+        <select name="location">
+          <option value="">All Locations</option>
+          {% for loc in locations %}
+          <option value="{{ loc.id }}" {% if selected_location == loc.id|stringformat:"s" %}selected{% endif %}>{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Movement Type</label>
+        <select name="type">
+          <option value="">All Movement Types</option>
+          {% for val, label in movement_types %}
+          <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">From Date</label>
+        <input type="date" name="date_from" value="{{ date_from }}">
+      </div>
+
+      <div class="flex items-end space-x-2">
+        <div class="flex-1">
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">To Date</label>
+          <input type="date" name="date_to" value="{{ date_to }}">
+        </div>
+        <button type="submit" class="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition">
+          Filter
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Movement Table -->
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <tr>
+            <th class="px-6 py-3.5">Date & Time</th>
+            <th class="px-6 py-3.5">Item</th>
+            <th class="px-6 py-3.5">Location</th>
+            <th class="px-6 py-3.5">Type</th>
+            <th class="px-6 py-3.5 text-right">Quantity Change</th>
+            <th class="px-6 py-3.5 text-right">Balance After</th>
+            <th class="px-6 py-3.5">Reason / Reference</th>
+            <th class="px-6 py-3.5">Recorded By</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          {% for m in page_obj %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+              {{ m.created_at|date:"Y-m-d H:i" }}
+            </td>
+
+            <td class="px-6 py-4">
+              <a href="{% url 'catalog:item_detail' m.item.id %}" class="font-semibold text-gray-900 hover:text-sky-600 block">
+                {{ m.item.name }}
+              </a>
+              <span class="text-xs text-gray-400">Code: {{ m.item.sku|default:"None" }}</span>
+            </td>
+
+            <td class="px-6 py-4 font-medium text-gray-800">
+              {{ m.location.name }}
+            </td>
+
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                {% if m.movement_type == 'RECEIVED' or m.movement_type == 'OPENING_BALANCE' %}bg-emerald-100 text-emerald-800
+                {% elif m.movement_type == 'USED' %}bg-rose-100 text-rose-800
+                {% else %}bg-amber-100 text-amber-800{% endif %}">
+                {{ m.get_movement_type_display }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4 text-right font-bold text-base whitespace-nowrap {% if m.quantity_delta > 0 %}text-emerald-600{% elif m.quantity_delta < 0 %}text-rose-600{% else %}text-gray-700{% endif %}">
+              {% if m.quantity_delta > 0 %}+{% endif %}{{ m.quantity_delta }}
+              <span class="text-xs font-normal text-gray-500">{{ m.item.get_unit_display }}</span>
+            </td>
+
+            <td class="px-6 py-4 text-right font-medium text-gray-900 whitespace-nowrap">
+              {{ m.quantity_after }}
+            </td>
+
+            <td class="px-6 py-4 text-gray-600 max-w-xs truncate" title="{{ m.reason }}">
+              {{ m.reason }}
+              {% if m.unit_cost %}<span class="text-xs text-gray-400 block">Cost: {{ current_workspace.currency }} {{ m.unit_cost }}</span>{% endif %}
+            </td>
+
+            <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">
+              {{ m.user.username|default:"System" }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+              <svg class="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <p class="font-medium text-gray-700">No stock movements found.</p>
+              <p class="text-xs text-gray-400 mt-1">Try adjusting your filters or record a stock receipt.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "components/pagination.html" %}
+  </div>
+
+</div>
+{% endblock %}
+

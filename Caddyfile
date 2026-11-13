@@ -1,0 +1,30 @@
+# Caddy reverse proxy configuration for Itwadura Inventory
+# Replace `inventory.example.com` with your production domain name or `localhost` for local SSL testing.
+
+{$DOMAIN:localhost} {
+    encode gzip zstd
+
+    # Serve static assets directly
+    handle_path /static/* {
+        root * /var/www/static
+        file_server
+    }
+
+    # Proxy all dynamic requests to Gunicorn Django application
+    handle {
+        reverse_proxy web:8000 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            header_up Host {host}
+        }
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
